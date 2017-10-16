@@ -55,6 +55,7 @@ function onDeviceFound(result){
     console.log("onDeviceFound: " + result)
 
     if(result === "20:16:12:21:98:47"){
+        document.getElementById("address").innerHTML = "20:16:12:21:98:47"
         connect(result);
     }
 }
@@ -62,44 +63,43 @@ function onDeviceFound(result){
 function onConnectionStateChanged(state){
     console.log("state: " + state)
 
+    var stateName = "DISCONNECTED";
+
     switch (state) {
         case 0: //NO_CONNECTION
-            console.log("NO_CONNECTION")
-
+            stateName = "NO_CONNECTION"
             break;
         case 1: //LISTEN
-            console.log("LISTEN")
+            stateName = "LISTEN"
             break;
         case 2: //CONNECTING
-            console.log("CONNECTING")
+            stateName = "CONNECTING"
             break;
         case 3: //CONNECTED
-            console.log("CONNECTED")
-
+            stateName = "CONNECTED"
             break;
         case 4: //ACQUISITION_TRYING
-            console.log("ACQUISITION_TRYING")
-
+            stateName = "ACQUISITION_TRYING"
             break;
         case 5: //ACQUISITION_OK
-            console.log("ACQUISITION_OK")
-
+            stateName = "ACQUISITION_OK"
             break;
         case 6: //ACQUISITION_STOPPING
-            console.log("ACQUISITION_STOPPING")
-
+            stateName = "ACQUISITION_STOPPING"
             break;
         case 7: //DISCONNECTED
-            console.log("DISCONNECTED")
-
+            stateName = "DISCONNECTED"
             break;
         case 8: //ENDED
-            console.log("ENDED")
-
+            stateName = "ENDED"
             break;
         default:
-            console.log("unknown state")
+            stateName = "unknown state"
     }
+
+    console.log(stateName)
+
+    document.getElementById("state").innerHTML = stateName
 }
 
 function onDataAvailable(frame){
@@ -108,11 +108,7 @@ function onDataAvailable(frame){
     var digitalChannels = frame[2]
     var analogChannels = frame[3]
 
-    console.log("identifier: " + identifier)
-    console.log("seqNumber: " + seqNumber)
-    console.log("digitalChannels: " + digitalChannels[0] + "," + digitalChannels[1] + "," + digitalChannels[2] + "," + digitalChannels[3])
-    console.log("analogChannels: " + analogChannels[0] + "," + analogChannels[1] + "," + analogChannels[2] + "," + analogChannels[3] + "," + analogChannels[4] + "," + analogChannels[5])
-
+    document.getElementById("results").innerHTML = identifier + " -> Seq: " + seqNumber + "; Digital: " + digitalChannels[0] + "," + digitalChannels[1] + "," + digitalChannels[2] + "," + digitalChannels[3] + "; Analog: " + analogChannels[0] + "," + analogChannels[1] + "," + analogChannels[2] + "," + analogChannels[3] + "," + analogChannels[4] + "," + analogChannels[5]
 }
 
 function onReplyAvailable(result){
@@ -121,22 +117,97 @@ function onReplyAvailable(result){
         case 0: //Description reply
             console.log("Description: " + result[1])
 
-            start([0,1,2,3,4,5], 100);
+            //ready to start acquisition
+            // start([0,1,2,3,4,5], 100);
 
-            var parentElement = document.getElementById('deviceready');
-            var listeningElement = parentElement.querySelector('.listening');
-            var receivedElement = parentElement.querySelector('.received');
+            // var parentElement = document.getElementById('deviceready');
+            // var listeningElement = parentElement.querySelector('.listening');
+            // var receivedElement = parentElement.querySelector('.received');
+            //
+            // listeningElement.setAttribute('style', 'display:none;');
+            // receivedElement.setAttribute('style', 'display:block;');
 
-            listeningElement.setAttribute('style', 'display:none;');
-            receivedElement.setAttribute('style', 'display:block;');
+            document.getElementById("results").innerHTML = "Description: " + result[1]
+
 
             break;
         case 1: //getState reply
             console.log("State: " + result[1])
 
+            document.getElementById("results").innerHTML = "State: " + result[1]
+
             break;
         default:
     }
+}
+
+//UI methods
+document.getElementById("connectButton").onclick = function(){
+    var address = "20:16:12:21:98:47"
+    connect(address)
+}
+
+document.getElementById("disconnectButton").onclick = function(){
+    disconnect()
+}
+
+document.getElementById("startButton").onclick = function(){
+    start([0,1,2,3,4,5], 100);
+}
+
+document.getElementById("stopButton").onclick = function(){
+    stop();
+}
+
+var digital1Checked = false
+document.getElementById("digital1").onclick = function () {
+    if(digital1Checked) {
+        document.getElementById("digital1").checked = false
+        digital1Checked = false;
+    }
+    else{
+        document.getElementById("digital1").checked = true
+        digital1Checked = true;
+    }}
+
+var digital2Checked = false
+document.getElementById("digital2").onclick = function () {
+    if(digital2Checked) {
+        document.getElementById("digital2").checked = false
+        digital2Checked = false;
+    }
+    else{
+        document.getElementById("digital2").checked = true
+        digital2Checked = true;
+    }
+
+}
+
+document.getElementById("triggerButton").onclick = function(){
+    var digital1 = document.getElementById("digital1").checked ? 1 : 0
+    var digital2 = document.getElementById("digital2").checked ? 1 : 0
+
+    console.log("triggerButton: " + [digital1, digital2])
+
+    trigger([digital1, digital2])
+}
+
+document.getElementById("stateButton").onclick = function(){
+    console.log("stateButton")
+
+    getState()
+}
+
+document.getElementById("batteryThresholdButton").onclick = function(){
+    var value = document.getElementById("batteryThresholdSeekBar").value
+
+    setBatteryThreshold(value)
+}
+
+document.getElementById("pwmButton").onclick = function(){
+    var value = document.getElementById("pwmSeekBar").value
+
+    setPwm(value)
 }
 
 //BITalino methods
@@ -169,7 +240,7 @@ function trigger(digitalChannels){
 }
 
 function getState(){
-    window.bitalino.trigger(function(result) { console.log("getState: " + result);}, function(err) { console.log("getState: " + err)})
+    window.bitalino.getState(function(result) { console.log("getState: " + result);}, function(err) { console.log("getState: " + err)})
 }
 
 function setPwm(pwmOutput){

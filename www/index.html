@@ -36,13 +36,115 @@
         <title>BITalino Cordova</title>
     </head>
     <body>
-        <div class="app">
-            <h1>BITalino Cordova</h1>
-            <div id="deviceready" class="blink">
-                <p class="event listening">Connecting to Device</p>
-                <p class="event received">Device is Ready</p>
-            </div>
+    <div class="row">
+        <div class="col-2">
+            <b>Name:</b>
         </div>
+        <div class="col-2" id="name">
+
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-2">
+            <b>MAC Address:</b>
+        </div>
+        <div class="col-2" id="address">
+            00:00:00:00:00:00
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-2">
+            <b>Elapsed Time:</b>
+        </div>
+        <div class="col-2" id="elapsedTime">
+            00:00:00
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-2">
+            <b>State:</b>
+        </div>
+        <div class="col-2" id="state">
+            DISCONNECTED
+        </div>
+    </div>
+
+    <hr>
+
+    <div class="row">
+        <div class="col-2">
+            <button class="button" id="connectButton">Connect</button>
+        </div>
+        <div class="col-2">
+            <button class="button" id="disconnectButton">Disconnect</button>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-2">
+            <button class="button" id="startButton">Start</button>
+        </div>
+        <div class="col-2">
+            <button class="button" id="stopButton">Stop</button>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-1">
+            <button class="button" id="stateButton">State</button>
+        </div>
+    </div>
+
+
+    <div class="row">
+        <div class="col-2">
+            <input type="radio" name="digital1" value="1" id="digital1"> 1<br>
+        </div>
+        <div class="col-2">
+            <input type="radio" name="digital2" value="2" id="digital2"> 2<br>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-1">
+            <button class="button" id="triggerButton">Trigger</button>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-41">
+            <input style="width:100%" type="range" min="1" max="62" value="20" id="batteryThresholdSeekBar">
+        </div>
+        <div class="col-42">
+            <button class="button" id="batteryThresholdButton">Battery Threshold</button>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-41">
+            <input style="width:100%" type="range" min="1" max="254" value="100" id="pwmSeekBar">
+        </div>
+        <div class="col-42">
+            <button class="button" id="pwmButton">PWM</button>
+        </div>
+    </div>
+
+
+    <hr>
+
+    <div class="row">
+        <div class="col-1">
+            <b>Results:</b>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-1" id="results">
+            ...
+        </div>
+    </div>
         <script type="text/javascript" src="cordova.js"></script>
         <script type="text/javascript" src="js/index.js"></script>
     </body>
