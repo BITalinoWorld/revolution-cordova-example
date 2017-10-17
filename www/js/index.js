@@ -54,8 +54,15 @@ function enableScan(enable, timeInMs) {
 function onDeviceFound(result){
     console.log("onDeviceFound: " + result)
 
-    if(result === "20:16:12:21:98:47"){
-        document.getElementById("address").innerHTML = "20:16:12:21:98:47"
+    //BTH
+    // if(result === "20:16:12:21:98:47"){
+    //     document.getElementById("address").innerHTML = "20:16:12:21:98:47"
+    //     connect(result);
+    // }
+
+    //BLE
+    if(result === "B0:B4:48:F0:C8:60"){
+        document.getElementById("address").innerHTML = "B0:B4:48:F0:C8:60"
         connect(result);
     }
 }
@@ -143,7 +150,8 @@ function onReplyAvailable(result){
 
 //UI methods
 document.getElementById("connectButton").onclick = function(){
-    var address = "20:16:12:21:98:47"
+    //var address = "20:16:12:21:98:47" //BTH
+    var address = "B0:B4:48:F0:C8:60" //BLE
     connect(address)
 }
 

@@ -47,7 +47,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.List;
 import java.util.Arrays;
+import java.util.ArrayList;
 
 import android.provider.Settings;
 import static info.plux.pluxapi.Constants.*;
@@ -85,6 +87,7 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
     private int[] selectedChannels = new int[]{0,1,2,3,4,5};
 
     private BTHDeviceScan bthDeviceScan;
+    private List<BluetoothDevice> deviceList = new ArrayList<BluetoothDevice>();
     
     private CallbackContext askForPermissionCallback;
 
@@ -223,28 +226,7 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
     @Override
     public void onBITalinoDataAvailable(BITalinoFrame frame) {
 
-        JSONArray data = new JSONArray();
-        data.put(frame.getIdentifier());
-        data.put(frame.getSequence());
-
-        JSONArray digitalJSONArray = new JSONArray();
-        digitalJSONArray.put(frame.getDigitalArray()[0]);
-        digitalJSONArray.put(frame.getDigitalArray()[1]);
-        digitalJSONArray.put(frame.getDigitalArray()[2]);
-        digitalJSONArray.put(frame.getDigitalArray()[3]);
-        data.put(digitalJSONArray);
-//        data.put(frame.getDigitalArray());
-
-        JSONArray analogJSONArray = new JSONArray();
-        analogJSONArray.put(frame.getAnalogArray()[0]);
-        analogJSONArray.put(frame.getAnalogArray()[1]);
-        analogJSONArray.put(frame.getAnalogArray()[2]);
-        analogJSONArray.put(frame.getAnalogArray()[3]);
-        analogJSONArray.put(frame.getAnalogArray()[4]);
-        analogJSONArray.put(frame.getAnalogArray()[5]);
-
-        data.put(analogJSONArray);
-//        data.put(frame.getAnalogArray());
+        JSONArray data = frameToJSONArray(frame);
 
         PluginResult result = new PluginResult(PluginResult.Status.OK, data);
         result.setKeepCallback(true);
@@ -271,11 +253,7 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
                     if(parcelable.getClass().equals(BITalinoFrame.class)){ //BITalino
                         BITalinoFrame frame = (BITalinoFrame) parcelable;
 
-                        JSONArray data = new JSONArray();
-                        data.put(frame.getIdentifier());
-                        data.put(frame.getSequence());
-                        data.put(frame.getDigitalArray());
-                        data.put(frame.getAnalogArray());
+                        JSONArray data = frameToJSONArray(frame);
 
                         PluginResult result = new PluginResult(PluginResult.Status.OK, data);
                         result.setKeepCallback(true);
@@ -318,6 +296,7 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
                 BluetoothDevice bluetoothDevice = intent.getParcelableExtra(Constants.EXTRA_DEVICE_SCAN);
                 int rssi = intent.getIntExtra(Constants.EXTRA_DEVICE_RSSI, Integer.MIN_VALUE);
 
+                deviceList.add(bluetoothDevice);
 
                 PluginResult result = new PluginResult(PluginResult.Status.OK, bluetoothDevice.getAddress());
                 result.setKeepCallback(true);
@@ -371,6 +350,7 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
             final long timeInMs = args.getLong(1);
 
             if (enable) {
+                deviceList.clear();
                 // Stops scanning after a pre-defined scan period.
                 new Handler().postDelayed(new Runnable() {
                     @Override
@@ -396,10 +376,16 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
         try{
             final String identifier = args.getString(0);
 
+            BluetoothDevice device = getBluetoothDevice(identifier);
+
+            if(device == null){
+                callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.ERROR));
+                return;
+            }
+
             try {
                 if(bitalino == null) {
-//                    bitalino = new BITalinoCommunicationFactory().getCommunication(Communication.getById(bluetoothDevice.getType()), this, this);
-                    bitalino = new BITalinoCommunicationFactory().getCommunication(Communication.BTH, cordova.getActivity(), this);
+                    bitalino = new BITalinoCommunicationFactory().getCommunication(Communication.getById(device.getType()), cordova.getActivity(), this);
                 }
 
                 bitalino.connect(identifier);
@@ -612,6 +598,39 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
         PluginResult result = new PluginResult(PluginResult.Status.NO_RESULT);
         result.setKeepCallback(true);
         callbackCtx.sendPluginResult(result);
+    }
+
+    /*
+     * Auxiliary methods
+     */
+    private BluetoothDevice getBluetoothDevice(String identifier){
+        for(BluetoothDevice device: deviceList){
+            if(device.getAddress().equals(identifier)){
+                return device;
+            }
+        }
+
+        return null;
+    }
+
+    private JSONArray frameToJSONArray(BITalinoFrame frame){
+        JSONArray data = new JSONArray();
+        data.put(frame.getIdentifier());
+        data.put(frame.getSequence());
+
+        JSONArray digitalJSONArray = new JSONArray();
+        for(int j = 0; j < frame.getDigitalArray().length; j++){
+            digitalJSONArray.put(frame.getDigitalArray()[j]);
+        }
+        data.put(digitalJSONArray);
+
+        JSONArray analogJSONArray = new JSONArray();
+        for(int j = 0; j < frame.getAnalogArray().length; j++){
+            analogJSONArray.put(frame.getAnalogArray()[j]);
+        }
+        data.put(analogJSONArray);
+
+        return data;
     }
 
 }
