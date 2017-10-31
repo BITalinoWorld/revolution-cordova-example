@@ -41,6 +41,11 @@ BITalino.prototype.enableScan = function(onSuccess, onError, enable, timeInMs)
     exec(onSuccess, onError, "BITalino", "enableScan", [enable, timeInMs]);
 }
 
+BITalino.prototype.scanForDevice = function(onSuccess, onError, identifier, timeInMs)
+{
+    exec(onSuccess, onError, "BITalino", "scanForDevice", [identifier, timeInMs]);
+}
+
 /*
  * Callbacks
  */

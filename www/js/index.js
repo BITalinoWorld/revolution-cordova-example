@@ -40,7 +40,8 @@ var app = {
         window.bitalino.onReplyAvailable(onReplyAvailable, function(err) { console.log("onReplyAvailable err: " + err); });
 
         //ask for permission to scan for BTH devices
-        window.bitalino.askForPermission(function(result) { console.log("askForPermission: " + result); enableScan(true, 10000);}, function(err) { console.log("askForPermission: " + err); navigator.app.exitApp();});
+        // window.bitalino.askForPermission(function(result) { console.log("askForPermission: " + result); enableScan(true, 10000);}, function(err) { console.log("askForPermission: " + err); navigator.app.exitApp();});
+        window.bitalino.askForPermission(function(result) { console.log("askForPermission: " + result); }, function(err) { console.log("askForPermission: " + err); navigator.app.exitApp();});
     }
 };
 
@@ -110,10 +111,10 @@ function onConnectionStateChanged(state){
 }
 
 function onDataAvailable(frame){
-    var identifier = frame[0]
-    var seqNumber = frame[1]
-    var digitalChannels = frame[2]
-    var analogChannels = frame[3]
+    var identifier = frame.address
+    var seqNumber = frame.sequence
+    var digitalChannels = frame.digitalChannels
+    var analogChannels = frame.analogChannels
 
     document.getElementById("results").innerHTML = identifier + " -> Seq: " + seqNumber + "; Digital: " + digitalChannels[0] + "," + digitalChannels[1] + "," + digitalChannels[2] + "," + digitalChannels[3] + "; Analog: " + analogChannels[0] + "," + analogChannels[1] + "," + analogChannels[2] + "," + analogChannels[3] + "," + analogChannels[4] + "," + analogChannels[5]
 }
@@ -149,6 +150,12 @@ function onReplyAvailable(result){
 }
 
 //UI methods
+document.getElementById("scanForDeviceButton").onclick = function(){
+    //var address = "20:16:12:21:98:47" //BTH
+    var address = "24:71:89:45:D0:3F" //BLE
+    scanForDevice(address, 15000)
+}
+
 document.getElementById("connectButton").onclick = function(){
     //var address = "20:16:12:21:98:47" //BTH
     var address = "B0:B4:48:F0:C8:60" //BLE
@@ -219,6 +226,10 @@ document.getElementById("pwmButton").onclick = function(){
 }
 
 //BITalino methods
+function scanForDevice(address, timeInMs) {
+    window.bitalino.scanForDevice(function(result) { console.log("scanForDevice: " + result);}, function(err) { console.log("scanForDevice: " + err)}, address, timeInMs)
+}
+
 function connect(address) {
     window.bitalino.connect(function(result) { console.log("connect: " + result);}, function(err) { console.log("connect: " + err)}, address)
 }

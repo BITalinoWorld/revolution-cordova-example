@@ -61,6 +61,7 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
     //Constants
     private static final String ACTION_ASK_FOR_PERMISSION           = "askForPermission";
     private static final String ACTION_ENABLE_SCAN        		    = "enableScan";
+    private static final String ACTION_SCAN_FOR_DEVICE     		    = "scanForDevice";
 
     private static final String ACTION_ON_DEVICE_FOUND  		    = "onDeviceFound";
     private static final String ACTION_ON_CONNECTION_STATE_CHANGED  = "onConnectionStateChanged";
@@ -83,7 +84,7 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
     private int rssi = Integer.MIN_VALUE;
     private BITalinoCommunication bitalino;
     private String deviceIdentifier = NEUTRAL_IDENTIFIER;
-    private final int sampleRate = 1000;
+    private final int sampleRate = 100;
     private int[] selectedChannels = new int[]{0,1,2,3,4,5};
 
     private BTHDeviceScan bthDeviceScan;
@@ -95,6 +96,8 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
     private CallbackContext onConnectionStateChangedCallback;
     private CallbackContext onDataAvailableCallback;
     private CallbackContext onReplyAvailableCallback;
+
+    private boolean isConnectWorkflowEnabled = false;
 
     /**
      * Constructor.
@@ -135,6 +138,9 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
         }
         else if (ACTION_ENABLE_SCAN.equals(action)){
             enableScan(args, callbackContext);
+        }
+        else if (ACTION_SCAN_FOR_DEVICE.equals(action)){
+            scanForDevice(args, callbackContext);
         }
         else if (ACTION_ON_DEVICE_FOUND.equals(action)){
             onDeviceFound(args, callbackContext);
@@ -226,7 +232,16 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
     @Override
     public void onBITalinoDataAvailable(BITalinoFrame frame) {
 
-        JSONArray data = frameToJSONArray(frame);
+        JSONObject data = null;
+        try {
+            data = frameToJSONObject(frame);
+        }
+        catch (JSONException e){
+            PluginResult result = new PluginResult(PluginResult.Status.ERROR, e.getMessage());
+            result.setKeepCallback(true);
+            onDataAvailableCallback.sendPluginResult(result);
+            return;
+        }
 
         PluginResult result = new PluginResult(PluginResult.Status.OK, data);
         result.setKeepCallback(true);
@@ -253,7 +268,16 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
                     if(parcelable.getClass().equals(BITalinoFrame.class)){ //BITalino
                         BITalinoFrame frame = (BITalinoFrame) parcelable;
 
-                        JSONArray data = frameToJSONArray(frame);
+                        JSONObject data = null;
+                        try {
+                            data = frameToJSONObject(frame);
+                        }
+                        catch (JSONException e){
+                            PluginResult result = new PluginResult(PluginResult.Status.ERROR, e.getMessage());
+                            result.setKeepCallback(true);
+                            onDataAvailableCallback.sendPluginResult(result);
+                            return;
+                        }
 
                         PluginResult result = new PluginResult(PluginResult.Status.OK, data);
                         result.setKeepCallback(true);
@@ -289,6 +313,10 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
                         result.setKeepCallback(true);
                         onReplyAvailableCallback.sendPluginResult(result);
 
+                        if(isConnectWorkflowEnabled){
+                            start(onReplyAvailableCallback);
+                        }
+
                     }
                 }
             }
@@ -298,9 +326,11 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
 
                 deviceList.add(bluetoothDevice);
 
-                PluginResult result = new PluginResult(PluginResult.Status.OK, bluetoothDevice.getAddress());
-                result.setKeepCallback(true);
-                onDeviceFoundCallback.sendPluginResult(result);
+                if(!isConnectWorkflowEnabled) {
+                    PluginResult result = new PluginResult(PluginResult.Status.OK, bluetoothDevice.getAddress());
+                    result.setKeepCallback(true);
+                    onDeviceFoundCallback.sendPluginResult(result);
+                }
 
             }
         }
@@ -346,6 +376,8 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
 
     private void enableScan(JSONArray args, CallbackContext callbackCtx) {
         try{
+            isConnectWorkflowEnabled = false;
+
             final boolean enable = args.getBoolean(0);
             final long timeInMs = args.getLong(1);
 
@@ -372,6 +404,45 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
         }
     }
 
+    private void scanForDevice(JSONArray args, final CallbackContext callbackCtx) {
+        try{
+            isConnectWorkflowEnabled = true;
+
+            final String identifier = args.getString(0);
+            final long timeInMs = args.getLong(1);
+
+            Log.d(TAG, "identifier: " + identifier);
+            Log.d(TAG, "timeInMs: " + timeInMs);
+
+            deviceList.clear();
+            // Stops scanning after a pre-defined scan period.
+
+            new Handler().postDelayed(new Runnable() {
+                   @Override
+                   public void run() {
+                       bthDeviceScan.stopScan();
+
+                       if(getBluetoothDevice(identifier) != null){
+                           PluginResult result = new PluginResult(PluginResult.Status.OK, "The device " + identifier + " was found.");
+                           result.setKeepCallback(true);
+                           callbackCtx.sendPluginResult(result);
+
+                           connect(identifier, callbackCtx);
+                       }
+                       else{
+                           callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, "The device " + identifier + " was not found."));
+                       }
+                   }
+            }, timeInMs);
+
+            bthDeviceScan.doDiscovery();
+        }
+        catch(Exception e) {
+            Log.e(TAG, "Error on scanDevice: " + e.getMessage());
+            callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, e.getMessage()));
+        }
+    }
+
     private void connect(JSONArray args, CallbackContext callbackCtx) {
         try{
             final String identifier = args.getString(0);
@@ -387,6 +458,32 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
                 if(bitalino == null) {
                     bitalino = new BITalinoCommunicationFactory().getCommunication(Communication.getById(device.getType()), cordova.getActivity(), this);
                 }
+
+                bitalino.connect(identifier);
+            } catch (BITalinoException e) {
+                e.printStackTrace();
+                callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, e.getMessage()));
+            }
+
+            callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.OK));
+        }
+        catch(Exception e) {
+            Log.e(TAG, "Error on connect: " + e.getMessage());
+            callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, e.getMessage()));
+        }
+    }
+
+    private void connect(String identifier, CallbackContext callbackCtx) {
+        try{
+            BluetoothDevice device = getBluetoothDevice(identifier);
+
+            if(device == null){
+                callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.ERROR));
+                return;
+            }
+
+            try {
+                bitalino = new BITalinoCommunicationFactory().getCommunication(Communication.getById(device.getType()), cordova.getActivity(), this);
 
                 bitalino.connect(identifier);
             } catch (BITalinoException e) {
@@ -447,6 +544,32 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
         catch(Exception e) {
             Log.e(TAG, "Error on connect: " + e.getMessage());
             callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, e.getMessage()));
+        }
+    }
+
+    public void start(CallbackContext callbackCtx) {
+        try{
+
+            final int sampleRate = 100;
+            final int[] analogChannels = new int[]{0,1,2,3,4,5};
+
+            try {
+                bitalino.start(analogChannels, sampleRate);
+            } catch (BITalinoException e) {
+                PluginResult result = new PluginResult(PluginResult.Status.ERROR, e.getMessage());
+                result.setKeepCallback(true);
+                callbackCtx.sendPluginResult(result);
+            }
+
+            PluginResult result = new PluginResult(PluginResult.Status.OK);
+            result.setKeepCallback(true);
+            callbackCtx.sendPluginResult(result);
+        }
+        catch(Exception e) {
+            Log.e(TAG, "Error on connect: " + e.getMessage());
+            PluginResult result = new PluginResult(PluginResult.Status.ERROR, e.getMessage());
+            result.setKeepCallback(true);
+            callbackCtx.sendPluginResult(result);
         }
     }
 
@@ -613,24 +736,24 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
         return null;
     }
 
-    private JSONArray frameToJSONArray(BITalinoFrame frame){
-        JSONArray data = new JSONArray();
-        data.put(frame.getIdentifier());
-        data.put(frame.getSequence());
+    private JSONObject frameToJSONObject(BITalinoFrame frame) throws JSONException{
+        JSONObject object = new JSONObject();
+        object.put("address",frame.getIdentifier());
+        object.put("sequence", frame.getSequence());
 
         JSONArray digitalJSONArray = new JSONArray();
         for(int j = 0; j < frame.getDigitalArray().length; j++){
             digitalJSONArray.put(frame.getDigitalArray()[j]);
         }
-        data.put(digitalJSONArray);
+        object.put("digitalChannels", digitalJSONArray);
 
         JSONArray analogJSONArray = new JSONArray();
         for(int j = 0; j < frame.getAnalogArray().length; j++){
             analogJSONArray.put(frame.getAnalogArray()[j]);
         }
-        data.put(analogJSONArray);
+        object.put("analogChannels", analogJSONArray);
 
-        return data;
+        return object;
     }
 
 }
