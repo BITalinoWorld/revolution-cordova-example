@@ -49,9 +49,9 @@ BITalino.prototype.scanForDevice = function(onSuccess, onError, identifier, time
 /*
  * Callbacks
  */
-BITalino.prototype.onDeviceFound = function(onSuccess, onError)
+BITalino.prototype.onDeviceFound = function(deviceFound, onError)
 {
-    exec(onSuccess, onError, "BITalino", "onDeviceFound", []);
+    exec(deviceFound, onError, "BITalino", "onDeviceFound", []);
 }
 
 BITalino.prototype.onConnectionStateChanged = function(onSuccess, onError)
@@ -59,14 +59,9 @@ BITalino.prototype.onConnectionStateChanged = function(onSuccess, onError)
     exec(onSuccess, onError, "BITalino", "onConnectionStateChanged", []);
 }
 
-BITalino.prototype.onDataAvailable = function(onSuccess, onError)
+BITalino.prototype.onDataAvailable = function(onData, onError)
 {
-    exec(onSuccess, onError, "BITalino", "onDataAvailable", []);
-}
-
-BITalino.prototype.onReplyAvailable = function(onSuccess, onError)
-{
-    exec(onSuccess, onError, "BITalino", "onReplyAvailable", []);
+    exec(onData, onError, "BITalino", "onDataAvailable", []);
 }
 
 /*

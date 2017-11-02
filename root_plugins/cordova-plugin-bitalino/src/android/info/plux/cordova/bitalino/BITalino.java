@@ -95,7 +95,11 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
     private CallbackContext onDeviceFoundCallback;
     private CallbackContext onConnectionStateChangedCallback;
     private CallbackContext onDataAvailableCallback;
-    private CallbackContext onReplyAvailableCallback;
+
+    private CallbackContext scanForDeviceCallback;
+
+    private CallbackContext getVersionCallback;
+    private CallbackContext getStateCallback;
 
     private boolean isConnectWorkflowEnabled = false;
 
@@ -150,9 +154,6 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
         }
         else if (ACTION_ON_DATA_AVAILABLE.equals(action)){
             onDataAvailable(args, callbackContext);
-        }
-        else if (ACTION_ON_REPLY_AVAILABLE.equals(action)){
-            onReplyAvailable(args, callbackContext);
         }
         else if (ACTION_CONNECT.equals(action)){
             connect(args, callbackContext);
@@ -258,7 +259,18 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
 
                 Log.i(TAG, identifier + " -> " + state.name());
 
-                PluginResult result = new PluginResult(PluginResult.Status.OK, state.ordinal());
+                JSONObject connectionState = null;
+                try {
+                    connectionState = connectionStateToJSONObject(identifier, state);
+                }
+                catch (JSONException e){
+                    PluginResult result = new PluginResult(PluginResult.Status.ERROR, e.getMessage());
+                    result.setKeepCallback(true);
+                    onConnectionStateChangedCallback.sendPluginResult(result);
+                    return;
+                }
+
+                PluginResult result = new PluginResult(PluginResult.Status.OK, connectionState);
                 result.setKeepCallback(true);
                 onConnectionStateChangedCallback.sendPluginResult(result);
             }
@@ -293,28 +305,40 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
                     if(parcelable.getClass().equals(BITalinoState.class)){ //BITalino
                         Log.d(TAG, identifier + " -> " + parcelable.toString());
 
-                        JSONArray reply = new JSONArray();
-                        reply.put(1);
-                        reply.put(parcelable.toString());
+                        if(getStateCallback != null) {
 
-                        PluginResult result = new PluginResult(PluginResult.Status.OK, reply);
-                        result.setKeepCallback(true);
-                        onReplyAvailableCallback.sendPluginResult(result);
+                            JSONObject stateObject = null;
+                                try {
+                                    stateObject = stateToJSONObject((BITalinoState) parcelable);
+                                }
+                                catch (JSONException e){
+                                    PluginResult result = new PluginResult(PluginResult.Status.ERROR, e.getMessage());
+                                    getStateCallback.sendPluginResult(result);
+
+                                    getStateCallback = null;
+                                    return;
+                                }
+
+
+                            PluginResult result = new PluginResult(PluginResult.Status.OK, stateObject);
+                            getStateCallback.sendPluginResult(result);
+
+                            getStateCallback = null;
+                        }
                     }
                     else if(parcelable.getClass().equals(BITalinoDescription.class)){ //BITalino
                         boolean isBITalino2 = ((BITalinoDescription)parcelable).isBITalino2();
                         Log.d(TAG, identifier + " -> isBITalino2: " + isBITalino2 + "; FwVersion: " + String.valueOf(((BITalinoDescription)parcelable).getFwVersion()));
 
-                        JSONArray reply = new JSONArray();
-                        reply.put(0);
-                        reply.put("isBITalino2: " + isBITalino2 + "; FwVersion: " + String.valueOf(((BITalinoDescription)parcelable).getFwVersion()));
+                        if(getVersionCallback != null) {
+                            PluginResult result = new PluginResult(PluginResult.Status.OK, "isBITalino2: " + isBITalino2 + "; FwVersion: " + String.valueOf(((BITalinoDescription)parcelable).getFwVersion()));
+                            getVersionCallback.sendPluginResult(result);
 
-                        PluginResult result = new PluginResult(PluginResult.Status.OK, reply);
-                        result.setKeepCallback(true);
-                        onReplyAvailableCallback.sendPluginResult(result);
+                            getVersionCallback = null;
+                        }
 
                         if(isConnectWorkflowEnabled){
-                            start(onReplyAvailableCallback);
+                            start(scanForDeviceCallback);
                         }
 
                     }
@@ -326,8 +350,21 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
 
                 deviceList.add(bluetoothDevice);
 
-                if(!isConnectWorkflowEnabled) {
-                    PluginResult result = new PluginResult(PluginResult.Status.OK, bluetoothDevice.getAddress());
+                if(!isConnectWorkflowEnabled && onDeviceFoundCallback != null) {
+
+                    JSONObject bluetoothDeviceObject = null;
+                    try {
+                        bluetoothDeviceObject =  bluetoothDeviceToJSONObject(bluetoothDevice, rssi);
+                    }
+                    catch (JSONException e){
+                        PluginResult result = new PluginResult(PluginResult.Status.ERROR, e.getMessage());
+                        getStateCallback.sendPluginResult(result);
+
+                        getStateCallback = null;
+                        return;
+                    }
+
+                    PluginResult result = new PluginResult(PluginResult.Status.OK, bluetoothDeviceObject);
                     result.setKeepCallback(true);
                     onDeviceFoundCallback.sendPluginResult(result);
                 }
@@ -423,6 +460,8 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
                        bthDeviceScan.stopScan();
 
                        if(getBluetoothDevice(identifier) != null){
+                           scanForDeviceCallback = callbackCtx;
+
                            PluginResult result = new PluginResult(PluginResult.Status.OK, "The device " + identifier + " was found.");
                            result.setKeepCallback(true);
                            callbackCtx.sendPluginResult(result);
@@ -491,7 +530,11 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
                 callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, e.getMessage()));
             }
 
-            callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.OK));
+            PluginResult result = new PluginResult(PluginResult.Status.OK);
+            if(isConnectWorkflowEnabled){
+                result.setKeepCallback(true);
+            }
+            callbackCtx.sendPluginResult(result);
         }
         catch(Exception e) {
             Log.e(TAG, "Error on connect: " + e.getMessage());
@@ -599,7 +642,11 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
                 callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, e.getMessage()));
             }
 
-            callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.OK));
+            getVersionCallback = callbackCtx;
+
+            PluginResult result = new PluginResult(PluginResult.Status.NO_RESULT);
+            result.setKeepCallback(true);
+            callbackCtx.sendPluginResult(result);
         }
         catch(Exception e) {
             Log.e(TAG, "Error on connect: " + e.getMessage());
@@ -660,7 +707,11 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
                 callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, e.getMessage()));
             }
 
-            callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.OK));
+            getStateCallback = callbackCtx;
+
+            PluginResult result = new PluginResult(PluginResult.Status.NO_RESULT);
+            result.setKeepCallback(true);
+            callbackCtx.sendPluginResult(result);
         }
         catch(Exception e) {
             Log.e(TAG, "Error on connect: " + e.getMessage());
@@ -715,14 +766,6 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
         callbackCtx.sendPluginResult(result);
     }
 
-    public void onReplyAvailable(JSONArray args, CallbackContext callbackCtx) {
-        onReplyAvailableCallback = callbackCtx;
-
-        PluginResult result = new PluginResult(PluginResult.Status.NO_RESULT);
-        result.setKeepCallback(true);
-        callbackCtx.sendPluginResult(result);
-    }
-
     /*
      * Auxiliary methods
      */
@@ -734,6 +777,24 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
         }
 
         return null;
+    }
+
+    private JSONObject bluetoothDeviceToJSONObject(BluetoothDevice device, int rssi) throws JSONException{
+        JSONObject deviceObject = new JSONObject();
+        deviceObject.put("address", device.getAddress());
+        deviceObject.put("name", device.getName());
+        deviceObject.put("communication", Communication.getById( device.getType()).name());
+        deviceObject.put("rssi", rssi);
+
+        return deviceObject;
+    }
+
+    private JSONObject connectionStateToJSONObject(String identifier, Constants.States state) throws JSONException{
+        JSONObject connectionStateObject = new JSONObject();
+        connectionStateObject.put("address", identifier);
+        connectionStateObject.put("state", state.ordinal());
+
+        return connectionStateObject;
     }
 
     private JSONObject frameToJSONObject(BITalinoFrame frame) throws JSONException{
@@ -752,6 +813,29 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
             analogJSONArray.put(frame.getAnalogArray()[j]);
         }
         object.put("analogChannels", analogJSONArray);
+
+        return object;
+    }
+
+    private JSONObject stateToJSONObject(BITalinoState state) throws JSONException{
+        JSONObject object = new JSONObject();
+        object.put("address",state.getIdentifier());
+
+        JSONArray digitalJSONArray = new JSONArray();
+        for(int j = 0; j < 4; j++){
+            digitalJSONArray.put(state.getDigital(j));
+        }
+        object.put("digitalChannels", digitalJSONArray);
+
+        JSONArray analogJSONArray = new JSONArray();
+        for(int j = 0; j < 6; j++){
+            analogJSONArray.put(state.getAnalog(j));
+        }
+        object.put("analogChannels", analogJSONArray);
+
+        object.put("analogOutput", state.getAnalogOutput());
+        object.put("battery", state.getBattery());
+        object.put("batThreshold", state.getBatThreshold());
 
         return object;
     }

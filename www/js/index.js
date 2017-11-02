@@ -34,13 +34,11 @@ var app = {
     receivedEvent: function(id) {
         console.log('Received Event: ' + id);
 
-        window.bitalino.onDeviceFound(onDeviceFound, function(err) { console.log("onDeviceFound err: " + err); });
+        window.bitalino.onDeviceFound(deviceFound, function(err) { console.log("onDeviceFound err: " + err); });
         window.bitalino.onConnectionStateChanged(onConnectionStateChanged, function(err) { console.log("onConnectionStateChanged err: " + err); });
         window.bitalino.onDataAvailable(onDataAvailable, function(err) { console.log("onDataAvailable err: " + err); });
-        window.bitalino.onReplyAvailable(onReplyAvailable, function(err) { console.log("onReplyAvailable err: " + err); });
 
         //ask for permission to scan for BTH devices
-        // window.bitalino.askForPermission(function(result) { console.log("askForPermission: " + result); enableScan(true, 10000);}, function(err) { console.log("askForPermission: " + err); navigator.app.exitApp();});
         window.bitalino.askForPermission(function(result) { console.log("askForPermission: " + result); }, function(err) { console.log("askForPermission: " + err); navigator.app.exitApp();});
     }
 };
@@ -52,8 +50,14 @@ function enableScan(enable, timeInMs) {
 }
 
 //callbacks
-function onDeviceFound(result){
-    console.log("onDeviceFound: " + result)
+var address = "B0:B4:48:F0:C8:60"
+function deviceFound(result){
+    var identifier = result.address
+    var name = result.name
+    var type = result.communication
+    var rssi = result.rssi
+
+    console.log("onDeviceFound: " + JSON.stringify(result))
 
     //BTH
     // if(result === "20:16:12:21:98:47"){
@@ -62,14 +66,18 @@ function onDeviceFound(result){
     // }
 
     //BLE
-    if(result === "B0:B4:48:F0:C8:60"){
+    if(identifier === "B0:B4:48:F0:C8:60"){
         document.getElementById("address").innerHTML = "B0:B4:48:F0:C8:60"
-        connect(result);
+        address = "B0:B4:48:F0:C8:60"
+        //connect(result);
     }
 }
 
-function onConnectionStateChanged(state){
-    console.log("state: " + state)
+function onConnectionStateChanged(stateObject){
+    var identifier = stateObject.address
+    var state = stateObject.state
+
+    console.log(identifier + " -> state: " + state)
 
     var stateName = "DISCONNECTED";
 
@@ -116,49 +124,25 @@ function onDataAvailable(frame){
     var digitalChannels = frame.digitalChannels
     var analogChannels = frame.analogChannels
 
-    document.getElementById("results").innerHTML = identifier + " -> Seq: " + seqNumber + "; Digital: " + digitalChannels[0] + "," + digitalChannels[1] + "," + digitalChannels[2] + "," + digitalChannels[3] + "; Analog: " + analogChannels[0] + "," + analogChannels[1] + "," + analogChannels[2] + "," + analogChannels[3] + "," + analogChannels[4] + "," + analogChannels[5]
+    document.getElementById("results").innerHTML = JSON.stringify(frame)
 }
 
-function onReplyAvailable(result){
-
-    switch (result[0]){
-        case 0: //Description reply
-            console.log("Description: " + result[1])
-
-            //ready to start acquisition
-            // start([0,1,2,3,4,5], 100);
-
-            // var parentElement = document.getElementById('deviceready');
-            // var listeningElement = parentElement.querySelector('.listening');
-            // var receivedElement = parentElement.querySelector('.received');
-            //
-            // listeningElement.setAttribute('style', 'display:none;');
-            // receivedElement.setAttribute('style', 'display:block;');
-
-            document.getElementById("results").innerHTML = "Description: " + result[1]
-
-
-            break;
-        case 1: //getState reply
-            console.log("State: " + result[1])
-
-            document.getElementById("results").innerHTML = "State: " + result[1]
-
-            break;
-        default:
-    }
-}
 
 //UI methods
+document.getElementById("scan").onclick = function(){
+    enableScan(true, 15000)
+}
+
 document.getElementById("scanForDeviceButton").onclick = function(){
     //var address = "20:16:12:21:98:47" //BTH
-    var address = "24:71:89:45:D0:3F" //BLE
+    //var address = "24:71:89:45:D0:3F" //BLE
+    var address = "B0:B4:48:F0:C8:60" //BLE
     scanForDevice(address, 15000)
 }
 
 document.getElementById("connectButton").onclick = function(){
     //var address = "20:16:12:21:98:47" //BTH
-    var address = "B0:B4:48:F0:C8:60" //BLE
+    //var address = "B0:B4:48:F0:C8:60" //BLE
     connect(address)
 }
 
@@ -213,6 +197,12 @@ document.getElementById("stateButton").onclick = function(){
     getState()
 }
 
+document.getElementById("descriptionButton").onclick = function(){
+    console.log("descriptionButton")
+
+    getVersion()
+}
+
 document.getElementById("batteryThresholdButton").onclick = function(){
     var value = document.getElementById("batteryThresholdSeekBar").value
 
@@ -247,7 +237,16 @@ function stop() {
 }
 
 function getVersion() {
-    window.bitalino.getVersion(function(result) { console.log("getVersion: " + result);}, function(err) { console.log("getVersion: " + err)})
+    window.bitalino.getVersion(
+        function(result) {
+            console.log("getVersion: " + JSON.stringify(result));
+
+            document.getElementById("results").innerHTML = "Description: " + JSON.stringify(result)
+        },
+        function(err) {
+            console.log("getVersion: " + err)
+        }
+    )
 }
 
 function setBatteryThreshold(value){
@@ -259,7 +258,16 @@ function trigger(digitalChannels){
 }
 
 function getState(){
-    window.bitalino.getState(function(result) { console.log("getState: " + result);}, function(err) { console.log("getState: " + err)})
+    window.bitalino.getState(
+        function(result) {
+            console.log("getState: " + JSON.stringify(result));
+
+            document.getElementById("results").innerHTML = "State: " + JSON.stringify(result)
+        },
+        function(err) {
+            console.log("getState: " + err)
+        }
+    )
 }
 
 function setPwm(pwmOutput){
