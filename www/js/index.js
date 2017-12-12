@@ -45,7 +45,7 @@ var app = {
 
 app.initialize();
 
-function enableScan(enable, timeInMs) {
+function enableScan(enable, timeInMs, sampleRate) {
     window.bitalino.enableScan(function(result) { console.log("enableScan: " + result);}, function(err) { console.log("enableScan: " + err)}, enable, timeInMs)
 }
 
@@ -78,6 +78,7 @@ function onConnectionStateChanged(stateObject){
     var state = stateObject.state
 
     console.log(identifier + " -> state: " + state)
+    console.log(identifier + " -> state: " + JSON.stringify(stateObject))
 
     var stateName = "DISCONNECTED";
 
@@ -124,7 +125,7 @@ function onDataAvailable(frame){
     var digitalChannels = frame.digitalChannels
     var analogChannels = frame.analogChannels
 
-    document.getElementById("results").innerHTML = JSON.stringify(frame)
+    console.log("frame: " + JSON.stringify(frame))
 }
 
 
@@ -134,10 +135,11 @@ document.getElementById("scan").onclick = function(){
 }
 
 document.getElementById("scanForDeviceButton").onclick = function(){
-    //var address = "20:16:12:21:98:47" //BTH
+    var address = "20:16:12:21:98:47" //BTH
     //var address = "24:71:89:45:D0:3F" //BLE
-    var address = "B0:B4:48:F0:C8:60" //BLE
-    scanForDevice(address, 15000)
+    //var address = "B0:B4:48:F0:C8:60" //BLE
+    var sampleRate = 1 //1 Hz
+    scanForDevice(address, 15000, sampleRate)
 }
 
 document.getElementById("connectButton").onclick = function(){
@@ -216,8 +218,8 @@ document.getElementById("pwmButton").onclick = function(){
 }
 
 //BITalino methods
-function scanForDevice(address, timeInMs) {
-    window.bitalino.scanForDevice(function(result) { console.log("scanForDevice: " + result);}, function(err) { console.log("scanForDevice: " + err)}, address, timeInMs)
+function scanForDevice(address, timeInMs, sampleRate) {
+    window.bitalino.scanForDevice(function(result) { console.log("scanForDevice: " + result);}, function(err) { console.log("scanForDevice: " + err)}, address, timeInMs, sampleRate)
 }
 
 function connect(address) {

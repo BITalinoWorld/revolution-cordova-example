@@ -84,7 +84,7 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
     private int rssi = Integer.MIN_VALUE;
     private BITalinoCommunication bitalino;
     private String deviceIdentifier = NEUTRAL_IDENTIFIER;
-    private final int sampleRate = 100;
+    private int sampleRate = 100;
     private int[] selectedChannels = new int[]{0,1,2,3,4,5};
 
     private BTHDeviceScan bthDeviceScan;
@@ -447,9 +447,12 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
 
             final String identifier = args.getString(0);
             final long timeInMs = args.getLong(1);
+            final int sampleRate = args.getInt(2);
 
             Log.d(TAG, "identifier: " + identifier);
             Log.d(TAG, "timeInMs: " + timeInMs);
+            Log.d(TAG, "sampleRate: " + sampleRate);
+            this.sampleRate = sampleRate;
 
             deviceList.clear();
             // Stops scanning after a pre-defined scan period.
@@ -592,8 +595,6 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
 
     public void start(CallbackContext callbackCtx) {
         try{
-
-            final int sampleRate = 100;
             final int[] analogChannels = new int[]{0,1,2,3,4,5};
 
             try {
