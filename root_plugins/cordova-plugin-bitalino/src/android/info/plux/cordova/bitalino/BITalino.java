@@ -103,6 +103,8 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
 
     private boolean isConnectWorkflowEnabled = false;
 
+    private boolean isScanning = false;
+
     /**
      * Constructor.
      */
@@ -442,8 +444,14 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
     }
 
     private void scanForDevice(JSONArray args, final CallbackContext callbackCtx) {
+        //avoid several calls at once
+        if(isScanning){
+            return;
+        }
+
         try{
             isConnectWorkflowEnabled = true;
+            isScanning = true;
 
             final String identifier = args.getString(0);
             final long timeInMs = args.getLong(1);
@@ -461,6 +469,8 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
                    @Override
                    public void run() {
                        bthDeviceScan.stopScan();
+
+                       isScanning = false;
 
                        if(getBluetoothDevice(identifier) != null){
                            scanForDeviceCallback = callbackCtx;
@@ -525,7 +535,9 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
             }
 
             try {
-                bitalino = new BITalinoCommunicationFactory().getCommunication(Communication.getById(device.getType()), cordova.getActivity(), this);
+                if(bitalino == null) {
+                    bitalino = new BITalinoCommunicationFactory().getCommunication(Communication.getById(device.getType()), cordova.getActivity(), this);
+                }
 
                 bitalino.connect(identifier);
             } catch (BITalinoException e) {

@@ -50,7 +50,8 @@ function enableScan(enable, timeInMs, sampleRate) {
 }
 
 //callbacks
-var address = "B0:B4:48:F0:C8:60"
+var address = "A0:E6:F8:5D:50:B3"
+// var address = "B0:B4:48:F0:C8:60"
 function deviceFound(result){
     var identifier = result.address
     var name = result.name
@@ -135,7 +136,10 @@ document.getElementById("scan").onclick = function(){
 }
 
 document.getElementById("scanForDeviceButton").onclick = function(){
-    var address = "20:16:12:21:98:47" //BTH
+    console.log("scanForDeviceButton")
+
+    //var address = "20:16:12:21:98:47" //BTH
+    var address = "A0:E6:F8:5D:50:B3" //BLE
     //var address = "24:71:89:45:D0:3F" //BLE
     //var address = "B0:B4:48:F0:C8:60" //BLE
     var sampleRate = 1 //1 Hz
@@ -219,6 +223,8 @@ document.getElementById("pwmButton").onclick = function(){
 
 //BITalino methods
 function scanForDevice(address, timeInMs, sampleRate) {
+    console.log("scanForDevice: " + address + "; " + timeInMs + "; " + sampleRate)
+
     window.bitalino.scanForDevice(function(result) { console.log("scanForDevice: " + result);}, function(err) { console.log("scanForDevice: " + err)}, address, timeInMs, sampleRate)
 }
 
