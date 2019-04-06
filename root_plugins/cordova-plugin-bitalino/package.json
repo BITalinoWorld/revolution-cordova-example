@@ -1,19 +1,19 @@
 {
-  "name": "cordova-plugin-bitalino”,
-  "version": “0.0.1”,
+  "name": "cordova-plugin-bitalino",
+  "version": "0.0.1",
   "description": "Cordova BITalino Plugin",
   "cordova": {
-    "id": "cordova-plugin-bitalino”,
+    "id": "cordova-plugin-bitalino",
     "platforms": [
       "android"
     ]
   },
   "keywords": [
     "cordova",
-    “BITalino”,
+    "BITalino",
+    "cordova-android",
     "ecosystem:cordova"
   ],
-  "scripts": {
   "author": "PLUX - Wireless Biosignals",
   "license": "Apache-2.0"
 }
