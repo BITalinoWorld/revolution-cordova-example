@@ -18,7 +18,7 @@ Install with Cordova cli
 
 # Examples
 
-There is a [sample project](https://bitalino.com) included with the plugin.
+There is a [sample project](https://github.com/BITalinoWorld/revolution-cordova-example) included with the plugin.
 
 # API
 
