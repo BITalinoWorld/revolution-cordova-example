@@ -1,6 +1,6 @@
 {
   "name": "cordova-plugin-bitalino",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "BITalino's Cordova Plugin",
   "cordova": {
     "id": "cordova-plugin-bitalino",

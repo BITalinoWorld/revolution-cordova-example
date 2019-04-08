@@ -21,9 +21,9 @@
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
     xmlns:android="http://schemas.android.com/apk/res/android"
     id="cordova-plugin-bitalino"
-    version="0.0.2">
+    version="0.0.3">
     <name>BITalino revolution</name>
-    <description>Cordova BITalino Plugin</description>
+    <description>BITalino's Cordova Plugin</description>
     <license>Apache 2.0</license>
     <keywords>cordova,BITalino, revolution</keywords>
 
