@@ -337,3 +337,9 @@ __Elements__:
 ## Feedback
 
 Try the code. If you find an problem or missing feature  file an issue.
+
+## Acknowledgments
+
+![alt text](https://cordis.europa.eu/docs/results/h2020/690/690367_PS/polycare-summary-for-publication-pic2.png "Project Logo")
+
+This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement N°690367 (http://www.polycare-project.com/)
