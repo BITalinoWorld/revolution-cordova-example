@@ -50,8 +50,6 @@ function enableScan(enable, timeInMs, sampleRate) {
 }
 
 //callbacks
-var address = "A0:E6:F8:5D:50:B3"
-// var address = "B0:B4:48:F0:C8:60"
 function deviceFound(result){
     var identifier = result.address
     var name = result.name
@@ -60,18 +58,7 @@ function deviceFound(result){
 
     console.log("onDeviceFound: " + JSON.stringify(result))
 
-    //BTH
-    // if(result === "20:16:12:21:98:47"){
-    //     document.getElementById("address").innerHTML = "20:16:12:21:98:47"
-    //     connect(result);
-    // }
-
-    //BLE
-    if(identifier === "B0:B4:48:F0:C8:60"){
-        document.getElementById("address").innerHTML = "B0:B4:48:F0:C8:60"
-        address = "B0:B4:48:F0:C8:60"
-        //connect(result);
-    }
+    document.getElementById("address").innerHTML = identifier
 }
 
 function onConnectionStateChanged(stateObject){
@@ -79,7 +66,6 @@ function onConnectionStateChanged(stateObject){
     var state = stateObject.state
 
     console.log(identifier + " -> state: " + state)
-    console.log(identifier + " -> state: " + JSON.stringify(stateObject))
 
     var stateName = "DISCONNECTED";
 
@@ -138,17 +124,16 @@ document.getElementById("scan").onclick = function(){
 document.getElementById("scanForDeviceButton").onclick = function(){
     console.log("scanForDeviceButton")
 
-    //var address = "20:16:12:21:98:47" //BTH
-    var address = "A0:E6:F8:5D:50:B3" //BLE
-    //var address = "24:71:89:45:D0:3F" //BLE
-    //var address = "B0:B4:48:F0:C8:60" //BLE
+    //set BITalino's MAC Address
+    var address = "0C:61:CF:2E:54:43"
+    //set sampling rate
     var sampleRate = 1 //1 Hz
     scanForDevice(address, 15000, sampleRate)
 }
 
 document.getElementById("connectButton").onclick = function(){
-    //var address = "20:16:12:21:98:47" //BTH
-    //var address = "B0:B4:48:F0:C8:60" //BLE
+    var address = document.getElementById("address").innerHTML
+
     connect(address)
 }
 
@@ -225,7 +210,10 @@ document.getElementById("pwmButton").onclick = function(){
 function scanForDevice(address, timeInMs, sampleRate) {
     console.log("scanForDevice: " + address + "; " + timeInMs + "; " + sampleRate)
 
-    window.bitalino.scanForDevice(function(result) { console.log("scanForDevice: " + result);}, function(err) { console.log("scanForDevice: " + err)}, address, timeInMs, sampleRate)
+    window.bitalino.scanForDevice(function(result) { 
+        console.log("scanForDevice: " + result);
+        document.getElementById("address").innerHTML = address
+    }, function(err) { console.log("scanForDevice: " + err)}, address, timeInMs, sampleRate)
 }
 
 function connect(address) {

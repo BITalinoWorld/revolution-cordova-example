@@ -508,7 +508,10 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
 
             try {
                 if(bitalino == null) {
-                    bitalino = new BITalinoCommunicationFactory().getCommunication(Communication.getById(device.getType()), cordova.getActivity(), this);
+                    Communication communication = Communication.getById(device.getType());
+                    communication = communication.equals(Communication.DUAL) ? Communication.BTH : communication;
+
+                    bitalino = new BITalinoCommunicationFactory().getCommunication(communication, cordova.getActivity(), this);
                 }
 
                 bitalino.connect(identifier);
@@ -536,7 +539,10 @@ public class BITalino extends CordovaPlugin implements OnBITalinoDataAvailable{
 
             try {
                 if(bitalino == null) {
-                    bitalino = new BITalinoCommunicationFactory().getCommunication(Communication.getById(device.getType()), cordova.getActivity(), this);
+                    Communication communication = Communication.getById(device.getType());
+                    communication = communication.equals(Communication.DUAL) ? Communication.BTH : communication;
+
+                    bitalino = new BITalinoCommunicationFactory().getCommunication(communication, cordova.getActivity(), this);
                 }
 
                 bitalino.connect(identifier);
